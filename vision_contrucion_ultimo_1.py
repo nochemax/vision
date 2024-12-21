@@ -1,14 +1,26 @@
 import subprocess
 import sys
 import os
-
-
 import pytz
 from datetime import datetime
 import platform
 import gtts
-import os
 import threading
+import cv2  # OpenCV for camera control
+import numpy as np  # For numerical operations
+import librosa  # For audio processing
+import pyaudio  # For handling audio input/output
+import wave  # For handling audio files
+import sqlite3  # For database operations
+import random  # For random choices in simulations
+import requests  # For downloading images from the web
+import io  # For handling byte streams
+from PIL import Image  # For image processing
+import webbrowser  # For opening web pages
+import time  # For handling time-related tasks
+import hashlib  # For hashing operations
+import tkinter as tk  # For GUI elements
+from tkinter import Scale  # For creating scale widgets
 
 
 
@@ -17,16 +29,12 @@ import threading
 # Las Funciones sean todas iguales y del hambito global del pograma ines 
 # Las Funciones globales 4 fanga de igual
 
-# --- instalacion de la paqueteria ---
-#========================================================
-#========================================================
-#--- funcion instalacion de paqueteria pythono y ines ---
+# --- Instalación de la paquetería ---
 def instalar_paquetes():
     """
     Función para instalar paquetes necesarios y eliminar conflictos de pip3.
     Verifica la versión de Python y realiza la instalación con resolución de conflictos.
     """
-    # Verificar la versión de Python
     try:
         python_version = subprocess.check_output(["python3", "--version"]).decode("utf-8").strip()
         print(f"Versión de Python instalada: {python_version}")
@@ -34,33 +42,25 @@ def instalar_paquetes():
         print("Error al obtener la versión de Python. Asegúrate de que Python 3 está instalado.")
         return
 
-    # Verifica si la versión es compatible con el sistema
     if python_version.startswith("Python 3"):
         print("Versión de Python compatible, continuando con la instalación de paquetes.")
     else:
         print("Versión de Python incompatible. Por favor, instala Python 3.")
         return
 
-    # Instalación de dependencias del sistema necesarias con permisos root
     print("Instalando dependencias del sistema necesarias...")
-    subprocess.run(["sudo visudo"], check=True)
     subprocess.run(["sudo", "apt", "update", "-y"], check=True)
     subprocess.run(["sudo", "apt", "install", "-y", "ffmpeg", "libatlas-base-dev", "build-essential", "portaudio19-dev", "libsndfile1", "python3-opencv", "libpulse-dev", "alsa-utils", "git"], check=True)
 
-
-    # Verificar si pip3 está instalado y actualizado
     try:
-        subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=True)  # Asegura que pip3 está instalado y actualizado
+        subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=True)
         print("pip3 está instalado y actualizado correctamente.")
     except subprocess.CalledProcessError:
         print("Error con pip3. Procediendo con la instalación...")
         subprocess.run([sys.executable, "-m", "ensurepip", "--default-pip"], check=True)
 
-    # Instalar paquetes de Python desde requirements.txt y resolver conflictos
     print("Instalando paquetes pip3 desde requirements.txt con resolución de conflictos...")
     subprocess.run(["pip3", "install", "--use-deprecated=legacy-resolver", "-r", "requirements.txt", "--user"], check=True)
-    
-    # Asegurarse de que todos los paquetes se instalen correctamente, usando el comando adicional para resolución de conflictos si es necesario
     subprocess.run(["pip3", "install", "-r", "requirements.txt", "--break-system-packages"], check=True)
     
     print("Instalación completada.")
@@ -69,12 +69,10 @@ def instalar_paquetes():
         with open('requirements.txt', 'r') as file:
             requirements = file.readlines()
 
-        # Limpiar y eliminar duplicados
         requirements = [req.strip() for req in requirements if req.strip()]
         unique_requirements = list(set(requirements))
-        unique_requirements.sort()  # Ordenar por claridad
+        unique_requirements.sort()
 
-        # Guardar los requerimientos limpios en un nuevo archivo
         with open('cleaned_requirements.txt', 'w') as file:
             file.write("\n".join(unique_requirements))
         
@@ -83,7 +81,6 @@ def instalar_paquetes():
         print(f"Error procesando el archivo requirements.txt: {e}")
         return
 
-    # Instalar dependencias apt necesarias
     apt_packages = [
         "ffmpeg", "libatlas-base-dev", "build-essential", "portaudio19-dev",
         "libsndfile1", "python3-opencv", "libpulse-dev", "alsa-utils", "git"
@@ -92,71 +89,69 @@ def instalar_paquetes():
     print("Instalando paquetes de sistema necesarios...")
     os.system(f"sudo apt update && sudo apt install -y {' '.join(apt_packages)}")
     
-    # Instalar paquetes pip desde el archivo limpio
-    print("Instalando paquetes pip3 desde cleaned_requirements.txt...")
-    os.system("sudo pip3 install -r cleaned_requirements.txt")
-
     print("Instalación de paquetes completada.")
-#==================================================================================
-#==================================================================================
-#==================================================================================
 
-#==================================================================================================
-#==================================================================================================
-                                              #GLOBAL
-#==================================================================================================
-#==================================================================================================
-# ---Inicio de hilo de pocesamientos ---
-    subprocess.run(["tu_usuario ALL=(ALL) NOPASSWD: /bin/systemctl enable entrenamiento_continuo.service, /bin/systemctl start entrenamiento_continuo.service"], check=True)
-    subprocess.run(["tu_usuario ALL=(ALL) NOPASSWD: /bin/systemctl enable iniciar_revision_eventos.service, /bin/systemctl start iniciar_revision_eventos.service"], check=True)
+# --- Variables Globales ---
+global memoria_global
+memoria_global = {
+    "zona_horaria": "Europe/Madrid",  # Zona horaria predeterminada
+}
 
-#--- FUNCIONES GLOBALES ---
+global hora_madrid  # Variable global para almacenar la hora de Madrid
+
+global FORMAT, CHANNELS, RATE, CHUNK, DURACION, FRAMES
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+RATE = 44100
+CHUNK = 1024
+DURACION = 3
+FRAMES = []
+
+global ruta_base, db_path_users, db_path_root, db_path_root_calendar, db_path_root_calendar_ines
+ruta_base = "home/Usuarios"
+db_path_users = "home/Usuarios"
+db_path_root = "/root/.usuario_root_datos/base_de_datos_usuario/root.db"
+db_path_root_calendar = "/root/.usuario_root_datos/base_de_datos_usuario/root_calendario.db"
+db_path_root_calendar_ines = "/root/.usuario_root_datos/base_de_datos_usuario/Ines_calendario.db"
+
+global tipo_usuario, comparacion_audio, tipo_voz, espectrometria_voz
+tipo_usuario = "desconocido"
+comparacion_audio = None
+tipo_voz = "Indefinida"
+espectrometria_voz = None
+
+# --- Funciones Globales ---
 def obtener_hora():
     """Obtiene la hora actual según la zona horaria en memoria global y la almacena globalmente."""
-    global hora_madrid  # Aseguramos que la variable sea global
-    zona_horaria = memoria_global.get("zona_horaria", "UTC")  # Zona predeterminada
+    global hora_madrid
+    zona_horaria = memoria_global.get("zona_horaria", "UTC")
     try:
         tz = pytz.timezone(zona_horaria)
         hora_actual = datetime.now(tz)
-        hora_madrid = hora_actual  # Asignamos la hora a la variable global
+        hora_madrid = hora_actual
         texto = f"La hora actual en {zona_horaria} es: {hora_actual.strftime('%H:%M:%S')}"
         print(f"[Inés] {texto}")
-        hablar(texto)  # Inés habla la hora
-        return hora_madrid  # Retornamos la hora para otras funciones
+        hablar(texto)
+        return hora_madrid
     except Exception as e:
         texto = f"No puedo obtener la hora debido a un error: {e}"
         print(f"[Inés] {texto}")
         hablar(texto)
         return None
 
-# Memoria global
-global memoria_global
-memoria_global = {
-    "zona_horaria": "Europe/Madrid",  # Zona horaria predeterminada
-}
-
-# Variable global para almacenar la hora de Madrid
-global hora_madrid
-
-        
 def hablar(texto):
-    """
-    Convierte el texto en voz y lo reproduce.
-    """
+    """Convierte el texto en voz y lo reproduce."""
     tts = gTTS(text=texto, lang='es')
     tts.save("respuesta.mp3")
-    os.system("mpg321 respuesta.mp3")  # Reproduce el archivo MP3 generado
-    os.remove("respuesta.mp3")  # Elimina el archivo después de reproducirlo
+    os.system("mpg321 respuesta.mp3")
+    os.remove("respuesta.mp3")
 
 def escuchar_comando():
-    """
-    Función para escuchar un comando del usuario.
-    """
+    """Función para escuchar un comando del usuario."""
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
         print("Escuchando...")
         audio = recognizer.listen(source)
-    
     try:
         comando = recognizer.recognize_google(audio, language='es-ES')
         print(f"Comando escuchado: {comando}")
@@ -167,45 +162,9 @@ def escuchar_comando():
     except sr.RequestError:
         print("Error al conectarse al servicio de Google.")
         return ""
-        
-# --- Función para autenticar por voz ---
-def autenticar_por_voz(audio_grabado, FORMAT, CHANNELS, RATE, CHUNK, duracion, frames):
-    
-    global archivo_audio
-    
-    audio = pyaudio.PyAudio()
-    archivo_audio = "Identificacion_voz0.wav"
 
-    # INICIAMOS GRABACIÓN
-    stream = audio.open(format=FORMAT, channels=CHANNELS,
-                        rate=RATE, input=True,
-                        frames_per_buffer=CHUNK)
-
-    for i in range(0, int(RATE / CHUNK * duracion)):
-        data = stream.read(CHUNK)
-        frames.append(data)
-    print("Grabación terminada")
-
-    # DETENEMOS GRABACIÓN
-    stream.stop_stream()
-    stream.close()
-    audio.terminate()
-
-    # CREAMOS/GUARDAMOS EL ARCHIVO DE AUDIO
-    waveFile = wave.open(archivo_audio, 'wb')
-    waveFile.setnchannels(CHANNELS)
-    waveFile.setsampwidth(audio.get_sample_size(FORMAT))
-    waveFile.setframerate(RATE)
-    waveFile.writeframes(b''.join(frames))
-    waveFile.close()
-
-    return archivo_audio
-    
-#--- Conexion para guardar las variables bases de datos ---
 def conectar_bd(ruta_db):
-    """
-    Conecta a la base de datos SQLite en la ruta especificada.
-    """
+    """Conecta a la base de datos SQLite en la ruta especificada."""
     try:
         conn = sqlite3.connect(ruta_db)
         cursor = conn.cursor()
@@ -215,67 +174,26 @@ def conectar_bd(ruta_db):
         print(f"Error al conectar a la base de datos: {e}")
         return None, None
 
-# --- Función para verificar si ya existe un registro root ---
 def verificar_registro_root():
-    """
-    Verifica si ya existe un registro root. Si no existe, permite el registro.
-    """
+    """Verifica si ya existe un registro root. Si no existe, permite el registro."""
     archivo_control = "root/.usuario_root_datos/.registro_root"
     if os.path.exists(archivo_control):
         print("El registro del usuario root ya existe. No se puede repetir el proceso.")
         return False
-    
-    # Crear archivo de control
     with open(archivo_control, "w") as f:
         f.write("Registro root completado.")
     print("Registro root permitido. Proceda con las capturas.")
     return True
-    
-#--- VAIABLES GLOBALES ---
 
-# --- Parámetros de configuración de audio ----
-global FORMAT = pyaudio.paInt16
-global CHANNELS = 2
-global RATE = 44100
-global CHUNK = 1024
-global DURACION = 3
-global FRAMES = []
-
-# --- Variables rutas y tipos ---
-global ruta_base = "home/Usuarios"
-global db_path_users = "home/Usuarios"
-global ruta_usuario_img = (f"home/Usuarios/{usuario_nombre_tipo}/img")
-global ruta_usuario_img = (f"home/Usuarios/{usuario_nombre_tipo}voz")
-global db_path_users_nuevo = (f"home/Usuarios/{usuario_nombre_tipo})
-global db_path_root = /root/.usuario_root_datos/base_de_datos_usuario/root.db"
-global db_path_root_calendar = "/root/.usuario_root_datos/base_de_datos_usuario/root_calendario.db"
-global db_path_root_calendar_ines  = "/root/.usuario_root_datos/base_de_datos_usuario/Ines_calendario.db"
-global tipo_usuario = "desconocido"  # Tipo de usuario (ej. 'admin', 'normal')
-global comparacion_audio = None  # Variable global para la comparación de audio
-global tipo_voz = "Indefinida"  # Tipo de voz (Grave, Normal, Aguda)
-global espectrometria_voz = None  # Datos espectrométricos de la voz
-#-------------------------------------------------------------------
-
-
-#====================================================================================================
-#====================================================================================================
-#====================================================================================================
-#====================================================================================================
-
-#--- prefdefinicion de las tablas de base de datos ---
+# --- Predefinición de las tablas de base de datos ---
 def crear_tablas_predefinidas():
-    """
-    Crea las tablas necesarias en las bases de datos predefinidas.
-    Esta función debe ejecutarse solo una vez al inicio.
-    """
-    # Crear conexiones
+    """Crea las tablas necesarias en las bases de datos predefinidas. Esta función debe ejecutarse solo una vez al inicio."""
     conexion_users = sqlite3.connect(db_path_users)
     conexion_root = sqlite3.connect(db_path_root)
     conexion_root_calendar = sqlite3.connect(db_path_root_calendar)
     conexion_root_calendar_ines = sqlite3.connect(db_path_root_calendar_ines)
 
     try:
-        # Crear tablas de usuarios
         cursor_users = conexion_users.cursor()
         cursor_users.execute("""
             CREATE TABLE IF NOT EXISTS Usuarios (
@@ -301,14 +219,13 @@ def crear_tablas_predefinidas():
                 BocaGrande TEXT,
                 ColorRecuadro TEXT,
                 AudioArchivo TEXT,
-                especmetria_numeriaca_voz,
+                especmetria_numeriaca_voz TEXT,
                 Telefono TEXT,
                 Direccion TEXT,
                 CorreoElectronico TEXT
             )
         """)
 
-        # Crear tablas de Root
         cursor_root = conexion_root.cursor()
         cursor_root.execute("""
             CREATE TABLE IF NOT EXISTS Root (
@@ -322,7 +239,6 @@ def crear_tablas_predefinidas():
             )
         """)
 
-        # Crear tablas de Calendario Root
         cursor_root_calendar = conexion_root_calendar.cursor()
         cursor_root_calendar.execute("""
             CREATE TABLE IF NOT EXISTS CalendarioRoot (
@@ -336,7 +252,6 @@ def crear_tablas_predefinidas():
             )
         """)
 
-        # Crear tablas de Calendario Inés
         cursor_root_calendar_ines = conexion_root_calendar_ines.cursor()
         cursor_root_calendar_ines.execute("""
             CREATE TABLE IF NOT EXISTS CalendarioInes (
@@ -350,7 +265,6 @@ def crear_tablas_predefinidas():
             )
         """)
 
-        # Confirmar los cambios
         conexion_users.commit()
         conexion_root.commit()
         conexion_root_calendar.commit()
@@ -361,38 +275,29 @@ def crear_tablas_predefinidas():
         print(f"Error al crear tablas: {e}")
 
     finally:
-        # Cerrar las conexiones
         conexion_users.close()
         conexion_root.close()
         conexion_root_calendar.close()
         conexion_root_calendar_ines.close()
         print("Conexiones cerradas tras la creación de tablas.")
 
-#------------ Identifica por voz ----------------
-
+# --- Identificación por voz ---
 def autenticar_por_voz(FORMAT, CHANNELS, RATE, CHUNK, duracion, frames):
-    """
-    Graba un audio para identificar al usuario.
-    """
+    """Graba un audio para identificar al usuario."""
     audio = pyaudio.PyAudio()
     archivo_audio = "Identificacion_voz0.wav"
 
-    # INICIAMOS GRABACIÓN
-    stream = audio.open(format=FORMAT, channels=CHANNELS,
-                        rate=RATE, input=True,
-                        frames_per_buffer=CHUNK)
+    stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
 
     for i in range(0, int(RATE / CHUNK * duracion)):
         data = stream.read(CHUNK)
         frames.append(data)
     print("Grabación terminada")
 
-    # DETENEMOS GRABACIÓN
     stream.stop_stream()
     stream.close()
     audio.terminate()
 
-    # CREAMOS/GUARDAMOS EL ARCHIVO DE AUDIO
     waveFile = wave.open(archivo_audio, 'wb')
     waveFile.setnchannels(CHANNELS)
     waveFile.setsampwidth(audio.get_sample_size(FORMAT))
@@ -405,7 +310,6 @@ def autenticar_por_voz(FORMAT, CHANNELS, RATE, CHUNK, duracion, frames):
     try:
         if comparacion_audio:
             resultado_comparacion = comparar_voz(audio_grabado, archivo_audio)
-            
             if resultado_comparacion:
                 print(f"Las voces coinciden.")
                 return True
@@ -416,16 +320,13 @@ def autenticar_por_voz(FORMAT, CHANNELS, RATE, CHUNK, duracion, frames):
         print(f"Error al comparar los audios: {e}")
         return False
 
-#--- Guardar nuevos usuario no root ---
+# --- Guardar nuevos usuario no root ---
 def guardar_nuevo_usuario(nombre_usuario, archivo_audio, ruta_base=db_path_users):
-    """
-    Guarda la grabación de un nuevo usuario en el sistema y en la base de datos.
-    """
+    """Guarda la grabación de un nuevo usuario en el sistema y en la base de datos."""
     conn, cursor = conectar_bd(ruta_base)
     if conn is None:
         return False
 
-    # Crear la estructura de directorios para el usuario
     ruta_usuario = os.path.join(ruta_base, nombre_usuario)
     if not os.path.exists(ruta_usuario):
         os.makedirs(ruta_usuario)
@@ -438,33 +339,16 @@ def guardar_nuevo_usuario(nombre_usuario, archivo_audio, ruta_base=db_path_users
     os.rename(archivo_audio, archivo_destino)
     print(f"Nuevo usuario {nombre_usuario} creado y voz guardada en {archivo_destino}.")
 
-    # Insertar el nuevo usuario en la base de datos
     cursor.execute("INSERT INTO usuarios (nombre, archivo_audio) VALUES (?, ?)", (nombre_usuario, archivo_destino))
     conn.commit()
     conn.close()
 
     return True
     
-#--- Conexion para guardar las variables locales de usuario no root ---
-def conectar_bd(ruta_db):
-    """
-    Conecta a la base de datos SQLite en la ruta especificada.
-    """
-    try:
-        conn = sqlite3.connect(ruta_db)
-        cursor = conn.cursor()
-        print("Conexión a la base de datos exitosa.")
-        return conn, cursor
-    except sqlite3.Error as e:
-        print(f"Error al conectar a la base de datos: {e}")
-        return None, None
-
-# ---Gestor de calendario root ---
+# --- Gestor de calendario root ---
 def gestionar_calendario_root():
-    """
-    Función para gestionar el calendario de Root.
-    """
-    hablar("Los egistros de los eventos fueron sadifactorios registros.")
+    """Función para gestionar el calendario de Root."""
+    hablar("Los registros de los eventos fueron satisfactorios.")
     comando = escuchar_comando().lower()
 
     if "agregar" in comando:
@@ -480,11 +364,8 @@ def gestionar_calendario_root():
     else:
         hablar("No reconozco ese comando. Intenta de nuevo.")
 
-# --- Crear regristros calendario root ---
 def agregar_registro_root(registro):
-    """
-    Agrega un registro al calendario de Root.
-    """
+    """Agrega un registro al calendario de Root."""
     conexion = sqlite3.connect(db_path_root_calendar)
     cursor = conexion.cursor()
     cursor.execute("""
@@ -495,11 +376,8 @@ def agregar_registro_root(registro):
     conexion.close()
     hablar(f"El registro '{registro}' ha sido agregado al calendario de Root.")
 
-# --- Consulta sobrecalendario root---
 def consultar_registros_root():
-    """
-    Consulta y muestra los registros del calendario de Root.
-    """
+    """Consulta y muestra los registros del calendario de Root."""
     conexion = sqlite3.connect(db_path_root_calendar)
     cursor = conexion.cursor()
     cursor.execute("SELECT * FROM CalendarioRoot")
@@ -510,9 +388,7 @@ def consultar_registros_root():
     
 # --- Ines independiente calendario ---
 def gestionar_calendario_ines():
-    """
-    Función para gestionar el calendario de Inés.
-    """
+    """Función para gestionar el calendario de Inés."""
     while True:
         hablar("¿Qué deseas hacer con tu calendario, Inés? Puedes agregar, eliminar, consultar o salir.")
         comando = escuchar_comando()
@@ -538,43 +414,38 @@ def gestionar_calendario_ines():
         else:
             hablar("Comando no reconocido. Intenta nuevamente.")
 
-#--- Funcion ines reguistra la zonas horarias de los sitios que le gusta ---
 def eliminar_datos_ines_calendario(id_registro):
-    """
-    Elimina un registro específico de la base de datos de calendario de Inés después de confirmación.
-    """
+    """Elimina un registro específico de la base de datos de calendario de Inés después de confirmación."""
     conexion = sqlite3.connect(db_path_root_calendar_ines)
     cursor = conexion.cursor()
 
-    # Verificar si el registro existe
     cursor.execute("SELECT * FROM CalendarioInes WHERE ID=?", (id_registro,))
     registro = cursor.fetchone()
 
     if registro:
         hablar(f"¿Estás seguro que quieres eliminar el registro con ID {id_registro} de la base de datos? Di 'sí' para confirmar o 'no' para cancelar.")
         
-        # Esperamos la respuesta de Inés
         respuesta = escuchar_comando()
 
         if "sí" in respuesta:
             cursor.execute("DELETE FROM CalendarioInes WHERE ID=?", (id_registro,))
             conexion.commit()
-            hablar(f"deacuerdo asi ahoraremos espacio, a demas es una fraangahoraria {id_registro} que no me  interesa, eliminado correctamente.")
+            hablar(f"De acuerdo, así ahorraremos espacio. Además, es una franja horaria {id_registro} que no me interesa, eliminado correctamente.")
         elif "no" in respuesta:
-            hablar(f"No  quieo me gusta saber la hora de {id_registro} tengo mi libertar.")
+            hablar(f"No quiero, me gusta saber la hora de {id_registro}, tengo mi libertad.")
         else:
             hablar("Respuesta no válida. La eliminación ha sido cancelada.")
     else:
         hablar(f"No se encontró un registro con ID {id_registro}.")
     conexion.close()
     
-#--- Función para que el usuario cambie la zona horaria con confirmación usuario ---
+# --- Función para que el usuario cambie la zona horaria con confirmación usuario ---
 def cambiar_zona_horaria():
     hablar("[Inés] ¿En qué zona horaria te gustaría que consulte la hora?")
     nueva_zona = input("Introduce la nueva zona horaria (Ejemplo: 'Europe/Madrid', 'America/New_York', etc.): ")
     
     try:
-        pytz.timezone(nueva_zona)  # Validar si la zona es válida
+        pytz.timezone(nueva_zona)
         texto = f"Has elegido la zona horaria '{nueva_zona}'. ¿Quieres confirmar este cambio?"
         print(f"[Inés] {texto}")
         hablar(texto)
@@ -586,7 +457,7 @@ def cambiar_zona_horaria():
             texto = f"¡Cambio exitoso! La nueva zona horaria es: {nueva_zona}"
             print(f"[Inés] {texto}")
             hablar(texto)
-            obtener_hora()  # Mostrar la nueva hora después de cambiar
+            obtener_hora()
         else:
             texto = "No se ha realizado ningún cambio."
             print(f"[Inés] {texto}")
@@ -597,68 +468,57 @@ def cambiar_zona_horaria():
         print(f"[Inés] {texto}")
         hablar(texto)
 
-#--- Función de inicialización para Debian 12.8 o cualquier kernel superior o igual a 6.5 ---
+# --- Función de inicialización para Debian 12.8 o cualquier kernel superior o igual a 6.5 ---
 def inicializar_sistema():
     """Función que se ejecuta al inicio del sistema en Debian 12.8 o cualquier kernel superior a 6.5."""
-    # Verificar el sistema operativo y el kernel
     sistema = platform.system()
     kernel_version = platform.release()
 
-    # Aceptamos cualquier kernel 6.5 o superior
     if sistema == "Linux" and kernel_version.startswith("6.") and float(kernel_version.split(".")[0]) >= 6:
         texto = "Iniciando sistema en Debian con kernel 6.5 o superior..."
         print(f"[Inés] {texto}")
         hablar(texto)
         
-        # Configuraciones iniciales para el sistema (por ejemplo, zona horaria)
         texto = "Configurando zona horaria predeterminada..."
         print(f"[Inés] {texto}")
         hablar(texto)
         
-        memoria_global["zona_horaria"] = "Europe/Madrid"  # Zona horaria predeterminada al arrancar
-        obtener_hora()  # Mostrar la hora predeterminada para confirmar la configuración
+        memoria_global["zona_horaria"] = "Europe/Madrid"
+        obtener_hora()
         
-        # Aquí puedes agregar más configuraciones iniciales según tus necesidades
-
     else:
         texto = f"Este sistema no está usando un kernel 6.5 o superior. Estás usando kernel {kernel_version}."
         print(f"[Inés] {texto}")
         hablar(texto)
 
-#-- Crear un hilo para la inicialización ---
+# --- Crear un hilo para la inicialización ---
 def iniciar_en_hilo():
     """Ejecuta la inicialización del sistema en un hilo independiente."""
     hilo_inicializacion = threading.Thread(target=inicializar_sistema)
-    hilo_inicializacion.start()  # Iniciar la función de inicialización en un hilo paralelo
+    hilo_inicializacion.start()
 
 ###########################################################################
 
 # --- Función para dar saludo de bienvenida y esperar el comando "Empecemos" ---
 def identificar_usuario_root():
-    """
-    Identifica al usuario registrado y saluda, o pide registrarse si no existe.
-    """
+    """Identifica al usuario registrado y saluda, o pide registrarse si no existe."""
     hablar("¿Cómo te llamas?")
     nombre_usuario = escuchar_comando()
 
-    # Si el usuario es Inés, se maneja su flujo
     if "Inés" in nombre_usuario:
-        hablar("Hola soy Inés, bienvenido. ¿Qué deseas hacer?,¿te paece bien empezar con la identificacion rootde usuario de la casa?")
+        hablar("Hola soy Inés, bienvenido. ¿Qué deseas hacer?, ¿te parece bien empezar con la identificación root de usuario de la casa?")
         bienvenida_ines()
-    # Si el usuario es Root, se maneja su flujo
     elif "Root" in nombre_usuario:
-        hablar("Perfecto estoy en tusiasmadisima por empezar a administrar el sistema de la casa.")
-        bienvenida_root()  # Agregar aquí las funciones de Root
+        hablar("Perfecto, estoy entusiasmadísima por empezar a administrar el sistema de la casa.")
+        bienvenida_root()
     else:
-        # Si no es Inés ni Root, se maneja el flujo de otros usuarios
         if comprobar_usuario_existente(nombre_usuario):
-            hablar(f"¡Hola {nombre_usuario}! Bienvenido de nuevo, ¿que tal todo?.")
+            hablar(f"¡Hola {nombre_usuario}! Bienvenido de nuevo, ¿qué tal todo?")
         else:
             hablar(f"Hola {nombre_usuario}, parece que no estás registrado. Procederemos a registrarte.")
             registrar_usuario(nombre_usuario)
-            hablar(f"¡Bienvenido, {nombre_usuario}! Ahora estás registrado enla base de datos.")
+            hablar(f"¡Bienvenido, {nombre_usuario}! Ahora estás registrado en la base de datos.")
 
-# --- identificacion usuario root ---
 def saludo_y_espera():
     print("Buenas, soy Inés, y estoy preparada para identificar al usuario principal de la casa.")
     print("Por favor, diga 'Empecemos' para comenzar el proceso de identificación del usuario root.")
@@ -674,50 +534,29 @@ def saludo_y_espera():
     print("Iniciando el proceso de identificación del usuario root...")
     ejecutar_identificacion_root()
 
-# --- Función principal de ejecución ---
 def ejecutar_identificacion_root():
-    """
-    Ejecuta la identificación del usuario root, incluyendo la creación de carpetas,
-    grabación de audio, captura de imágenes y cifrado de datos.
-    """
-    # 1. Verificar si el registro root ya existe
+    """Ejecuta la identificación del usuario root, incluyendo la creación de carpetas, grabación de audio, captura de imágenes y cifrado de datos."""
     if not verificar_registro_root():
-        return  # No continuar si ya está registrado
+        return
     
-    # 2. Crear las carpetas necesarias para el usuario root
     crear_carpeta_usuario_y_root()
-
-    # 3. Capturar imágenes del usuario root
     imagenes = capturar_imagenes_root()
-
-    # 4. Grabar audio del usuario root
     audios = grabar_audio_root()
-
-    # 5. Cifrar los archivos grabados
-    archivos = imagenes + audios  # Combinar imágenes y audios
+    archivos = imagenes + audios
     cifrar_datos_root(archivos)
 
     print("El proceso de identificación del usuario root ha sido completado.")
 
-# --- Función para crear carpetas específicas ---
 def crear_carpeta_usuario_y_root():
-    """
-    Crea las carpetas necesarias para el usuario root y otros usuarios.
-    """
-    # Carpeta para usuarios generales
+    """Crea las carpetas necesarias para el usuario root y otros usuarios."""
     os.makedirs("Usuarios/base_de_datos_usuario", exist_ok=True)
     print("Carpeta creada para usuarios generales: Usuarios/base_de_datos_usuario")
 
-    # Carpeta para usuario root
     os.makedirs("/root/.usuario_root_datos/base_de_datos_usuario", exist_ok=True)
     print("Carpeta creada para el usuario root: /root/.usuario_root_datos/base_de_datos_usuario")
 
-# --- Función para capturar imágenes del usuario root ---
 def capturar_imagenes_root():
-    """
-    Captura 2000 imágenes del usuario root, distribuidas entre 4 cámaras (500 imágenes por cámara).
-    Los archivos se almacenan cifrados dentro de 'root/.usuario_root_datos'.
-    """
+    """Captura 2000 imágenes del usuario root, distribuidas entre 4 cámaras (500 imágenes por cámara). Los archivos se almacenan cifrados dentro de 'root/.usuario_root_datos'."""
     ruta_root = "root/.usuario_root_datos"
     os.makedirs(ruta_root, exist_ok=True)
 
@@ -728,13 +567,11 @@ def capturar_imagenes_root():
     for camara in camaras:
         print(f"Capturando imágenes desde: {camara}")
         for i in range(imagenes_por_camara):
-            # Simulación de captura de imagen
             nombre_imagen = f"{camara.replace(' ', '_').lower()}_imagen_{i + 1}.jpg"
             ruta_imagen = os.path.join(ruta_root, nombre_imagen)
             
-            # Simulación: Generar una imagen ficticia (vacía)
             with open(ruta_imagen, "wb") as archivo:
-                archivo.write(os.urandom(1024))  # Simulación de imagen pequeña
+                archivo.write(os.urandom(1024))
             
             imagenes.append(ruta_imagen)
             print(f"Imagen capturada: {ruta_imagen}")
@@ -742,12 +579,8 @@ def capturar_imagenes_root():
     print("Captura de imágenes completa. Todas las imágenes han sido almacenadas.")
     return imagenes
 
-# --- Función para grabar audio del usuario root ---
 def grabar_audio_root():
-    """
-    Graba 100 MB de audio del usuario root distribuidos en 25 MB por dispositivo (4 dispositivos en total).
-    El usuario responderá a preguntas específicas, y los archivos serán almacenados en 'root/.usuario_root_datos'.
-    """
+    """Graba 100 MB de audio del usuario root distribuidos en 25 MB por dispositivo (4 dispositivos en total). El usuario responderá a preguntas específicas, y los archivos serán almacenados en 'root/.usuario_root_datos'."""
     ruta_root = "root/.usuario_root_datos"
     os.makedirs(ruta_root, exist_ok=True)
 
@@ -761,18 +594,16 @@ def grabar_audio_root():
     ]
 
     dispositivos = ["Cámara 1", "Cámara 2", "Dispositivo móvil", "Micrófono auxiliar"]
-    tamano_por_dispositivo = 25 * 1024 * 1024  # 25 MB en bytes
+    tamano_por_dispositivo = 25 * 1024 * 1024
 
     audios = []
     for dispositivo in dispositivos:
         print(f"Grabando desde: {dispositivo}")
         for pregunta in preguntas:
             print(pregunta)
-            # Simulación de grabación
             nombre_archivo = f"{dispositivo.replace(' ', '_').lower()}_audio.raw"
             ruta_archivo = os.path.join(ruta_root, nombre_archivo)
             
-            # Simulación: Generar archivo de 25MB para cada dispositivo
             with open(ruta_archivo, "wb") as archivo:
                 archivo.write(os.urandom(tamano_por_dispositivo))
             
@@ -782,38 +613,17 @@ def grabar_audio_root():
     print("Grabación completa. Todos los audios han sido almacenados.")
     return audios
 
-# --- Función para verificar si ya existe un registro root ---
-def verificar_registro_root():
-    """
-    Verifica si ya existe un registro root. Si no existe, permite el registro.
-    """
-    archivo_control = "root/.usuario_root_datos/.registro_root"
-    if os.path.exists(archivo_control):
-        print("El registro del usuario root ya existe. No se puede repetir el proceso.")
-        return False
-    
-    # Crear archivo de control
-    with open(archivo_control, "w") as f:
-        f.write("Registro root completado.")
-    print("Registro root permitido. Proceda con las capturas.")
-    return True
-
-# --- Función para cifrar los archivos del usuario root ---
 def cifrar_datos_root(archivos):
-    """
-    Cifra los archivos del usuario root utilizando SHA-1024.
-    """
+    """Cifra los archivos del usuario root utilizando SHA-1024."""
     carpeta_cifrada = "root/.usuario_root_datos/cifrado"
     os.makedirs(carpeta_cifrada, exist_ok=True)
 
     for archivo in archivos:
         with open(archivo, "rb") as f:
             contenido = f.read()
-            # Crear hash SHA-1024 (simulado con SHA-512 x2 por falta de SHA-1024 estándar)
             hash_1 = hashlib.sha512(contenido).digest()
             hash_2 = hashlib.sha512(hash_1).hexdigest()
         
-        # Guardar hash cifrado en la carpeta
         nombre_cifrado = os.path.basename(archivo) + ".hash"
         ruta_cifrada = os.path.join(carpeta_cifrada, nombre_cifrado)
         with open(ruta_cifrada, "w") as f:
@@ -823,7 +633,6 @@ def cifrar_datos_root(archivos):
 
     return carpeta_cifrada
 
-# --- Ejecutar la función de saludo y espera del comando ---
 saludo_y_espera()
 
 # --- Función para autenticar usuario por voz ---
@@ -2452,5 +2261,3 @@ def guardar_nuevo_usuario(nombre_usuario, archivo_audio, ruta_base):
     print(f"Nuevo usuario {nombre_usuario} creado y voz guardada en {archivo_destino}.")
     
     return True
-    
-    

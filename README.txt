@@ -21,6 +21,20 @@ sudo apt update
 sudo apt install -y ffmpeg libatlas-base-dev build-essential portaudio19-dev libsndfile1 python3-opencv libpulse-dev alsa-utils git
 ```
 
+### Additional System Dependencies
+
+Ensure the following system dependencies are installed:
+
+- `libasound2-dev`: For ALSA sound library.
+- `libffi-dev`: For Foreign Function Interface library.
+- `libssl-dev`: For SSL/TLS support.
+
+Install any missing system dependencies using apt:
+
+```bash
+sudo apt install -y libasound2-dev libffi-dev libssl-dev
+```
+
 ## Python Libraries
 
 The project uses several Python libraries. Install them using pip:
@@ -33,6 +47,29 @@ If you encounter any issues with package conflicts, use the following command:
 
 ```bash
 pip install --use-deprecated=legacy-resolver -r requirements.txt --user
+```
+
+### Additional Libraries
+
+Ensure the following Python libraries are installed:
+
+- `pytz`: For timezone calculations.
+- `gtts`: For text-to-speech conversion.
+- `pyaudio`: For audio processing.
+- `opencv-python`: For image processing.
+- `numpy`: For numerical operations.
+- `librosa`: For audio analysis.
+- `dlib`: For facial recognition.
+- `tensorflow`: For machine learning models.
+- `requests`: For HTTP requests.
+- `Pillow`: For image handling.
+- `playsound`: For playing sound files.
+- `sqlite3`: For database operations (built-in with Python).
+
+Install any missing libraries using pip:
+
+```bash
+pip install pytz gtts pyaudio opencv-python numpy librosa dlib tensorflow requests Pillow playsound
 ```
 
 ## Database Setup
@@ -63,4 +100,3 @@ python vision_contrucion_ultimo_1.py
 ## Contact
 
 For further assistance, please contact the project maintainer.
-
